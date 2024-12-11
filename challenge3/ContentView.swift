@@ -1,24 +1,390 @@
-//
-//  ContentView.swift
-//  challenge3
-//
-//  Created by Francesca Finetti on 09/12/24.
-//
-
 import SwiftUI
+import AVFoundation
 
 struct ContentView: View {
+    @State private var selectedDay: Int = Calendar.current.component(.day, from: Date())
+    @State private var tasksByDay: [Int: [Task]] = [:]
+    @State private var audioFilesByDay: [Int: [AudioFile]] = [:]
+    @State private var showModal: Bool = false
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("ciao!")
+        
+        NavigationView {
+            VStack(spacing: 0) {
+                VStack(spacing: 8) {
+                    Text("Today, \(formattedDate())")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Divider()
+                }
+                .padding()
+                
+                VStack(spacing: 10) {
+                    ZStack(alignment: .bottom) {
+                        ScrollViewReader { proxy in
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 20) {
+                                    ForEach(daysInMonth(), id: \.self) { day in
+                                        VStack(spacing: 4) {
+                                            Text(weekday(for: day))
+                                                .font(.subheadline)
+                                                .foregroundColor(.gray)
+                                            
+                                            ZStack {
+                                                Circle()
+                                                    .fill(day == selectedDay ? Color.blue : Color.clear)
+                                                    .frame(width: 36, height: 36)
+                                                Text("\(day)")
+                                                    .font(.body)
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(day == selectedDay ? .white : .black)
+                                            }
+                                            
+                                            ZStack {
+                                                if let tasksCount = tasksByDay[day]?.count, tasksCount > 0 {
+                                                    Circle()
+                                                        .fill(Color.blue)
+                                                        .frame(width: 20, height: 20)
+                                                    Text("\(tasksCount)")
+                                                        .font(.caption)
+                                                        .foregroundColor(.white)
+                                                } else {
+                                                    Circle()
+                                                        .fill(Color.clear)
+                                                        .frame(width: 20, height: 20)
+                                                }
+                                            }
+                                        }
+                                        .onTapGesture {
+                                            withAnimation {
+                                                selectedDay = day
+                                                proxy.scrollTo(day, anchor: .center)
+                                            }
+                                        }
+                                        .id(day)
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            .onAppear {
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    withAnimation {
+                                        proxy.scrollTo(selectedDay, anchor: .center)
+                                    }
+                                }
+                            }
+                        }
+                        
+                        Image(systemName: "triangle.fill")
+                            .resizable()
+                            .frame(width: 12, height: 6)
+                            .foregroundColor(.blue)
+                            .offset(y: 10)
+                    }
+                }
+                
+                
+                .padding(.bottom, 20)
+                
+                VStack(spacing: 20) {
+                    HStack(spacing: 20) {
+                        NavigationLink(destination: work()) {
+                            CategoryView(title: "Work", icon: "briefcase.fill")
+                        }
+                        NavigationLink(destination: personal()) {
+                            CategoryView(title: "Personal", icon: "person.fill")
+                        }
+                    }
+                    HStack(spacing: 20) {
+                        NavigationLink(destination: hobby()) {
+                            CategoryView(title: "Hobby", icon: "paintbrush.fill")
+                        }
+                        NavigationLink(destination: other()) {
+                            CategoryView(title: "Other", icon: "ellipsis.circle.fill")
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                
+                
+                List {
+                    if let tasks = tasksByDay[selectedDay], !tasks.isEmpty {
+                        Section(header: Text("Quick Added Tasks").font(.headline)) {
+                            ForEach(tasks) { task in
+                                HStack {
+                                    Button(action: {
+                                        if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(task.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(task.name)
+                                            .foregroundColor(task.isCompleted ? .black: .primary)
+                                        if let time = task.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
+                    if let audioFiles = audioFilesByDay[selectedDay], !audioFiles.isEmpty {
+                        Section(header: Text("Quick Added Audio Recordings").font(.headline)) {
+                            ForEach(audioFiles) { audioFile in
+                                HStack {
+                                    Button(action: {
+                                        if let index = audioFilesByDay[selectedDay]?.firstIndex(where: { $0.id == audioFile.id }) {
+                                            audioFilesByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: audioFile.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(audioFile.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(audioFile.url.deletingPathExtension().lastPathComponent)
+                                            .lineLimit(1)
+                                        if let time = audioFile.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        playAudio(url: audioFile.url)
+                                    }) {
+                                        Image(systemName: "play.circle")
+                                            .foregroundColor(.blue)
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                indexSet.forEach { index in
+                                    if let audioFile = audioFilesByDay[selectedDay]?[index] {
+                                        try? FileManager.default.removeItem(at: audioFile.url)
+                                    }
+                                }
+                                audioFilesByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
+                    if (tasksByDay[selectedDay]?.isEmpty ?? true) && (audioFilesByDay[selectedDay]?.isEmpty ?? true) {
+                        Text("Nothing planned for today!")
+                            .foregroundColor(.gray)
+                    }
+                }
+                .padding(.top, 20)
+                
+                HStack {
+                    Button(action: {
+                        showModal = true
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 20))
+                            Text("Quick Add Task")
+                                .font(.body)
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    .padding(.leading)
+                    
+                    Spacer()
+                }
+                .padding(.bottom, 10)
+                
+                Spacer()
+            }.background(Color(UIColor.systemGroupedBackground))
         }
-        .padding()
+        .sheet(isPresented: $showModal) {
+            AddTaskView(selectedDay: $selectedDay, addTask: { task, day, audioURL in
+                if tasksByDay[day] == nil {
+                    tasksByDay[day] = []
+                }
+                if !task.name.isEmpty {
+                    tasksByDay[day]?.append(task)
+                }
+                
+                if let audioURL = audioURL {
+                    if audioFilesByDay[day] == nil {
+                        audioFilesByDay[day] = []
+                    }
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                    let dateString = formatter.string(from: Date())
+                    let renamedURL = audioURL.deletingLastPathComponent().appendingPathComponent("\(dateString).m4a")
+                    try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
+                    audioFilesByDay[day]?.append(AudioFile(url: renamedURL))
+                }
+                
+                showModal = false // Chiudi la modale dopo il salvataggio
+            })
+        }
+    }
+    
+    private func daysInMonth() -> [Int] {
+        let calendar = Calendar.current
+        let range = calendar.range(of: .day, in: .month, for: Date())!
+        return Array(range)
+    }
+    private func formattedDate() -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .full
+        return formatter.string(from: Date())
+    }
+    private func weekday(for day: Int) -> String {
+        let calendar = Calendar.current
+        var components = calendar.dateComponents([.year, .month], from: Date())
+        components.day = day
+        let date = calendar.date(from: components) ?? Date()
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEE"
+        return formatter.string(from: date)
+    }
+    private func playAudio(url: URL) {
+        let player = try? AVAudioPlayer(contentsOf: url)
+        player?.play()
     }
 }
 
-#Preview {
-    ContentView()
+struct Task: Identifiable {
+    let id = UUID()
+    var name: String
+    var isCompleted: Bool = false
+    var time: String? // Ora opzionale
+}
+struct AudioFile: Identifiable {
+    let id = UUID()
+    var url: URL
+    var isCompleted: Bool = false
+    var time: String? // Ora opzionale
+}
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+    }
+}
+struct AddTaskView: View {
+    @Binding var selectedDay: Int
+    @State private var taskName: String = ""
+    @State private var selectedDate: Date = Date()
+    @State private var audioRecorder: AVAudioRecorder?
+    @State private var isRecording = false
+    @State private var recordedAudioURL: URL?
+    var addTask: (Task, Int, URL?) -> Void
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Task Details")) {
+                    TextField("Task Name", text: $taskName)
+                    
+                    Button(action: {
+                        if isRecording {
+                            stopRecording()
+                        } else {
+                            startRecording()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                                .foregroundColor(isRecording ? .red : .blue)
+                            Text(isRecording ? "Stop Recording" : "Record Audio")
+                        }
+                    }
+                    
+                    if let audioURL = recordedAudioURL {
+                        Text("Recorded: \(audioURL.lastPathComponent)")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                            .lineLimit(1)
+                    }
+                }
+                
+                Section(header: Text("Date & Time")) {
+                    DatePicker("Select Date", selection: $selectedDate, displayedComponents: [.date])
+                        .datePickerStyle(GraphicalDatePickerStyle())
+                    DatePicker("Select Time", selection: $selectedDate, displayedComponents: [.hourAndMinute])
+                        .labelsHidden()
+                }
+            }
+            .navigationBarTitle("Add Task", displayMode: .inline)
+            .navigationBarItems(trailing:Button("Save") {
+                let calendar = Calendar.current
+                let day = calendar.component(.day, from: selectedDate)
+                
+                let timeFormatter = DateFormatter()
+                timeFormatter.dateFormat = "HH:mm"
+                let timeString = timeFormatter.string(from: selectedDate)
+                
+                if let audioURL = recordedAudioURL {
+                    addTask(Task(name: "", time: timeString), day, audioURL)
+                } else if !taskName.isEmpty {
+                    addTask(Task(name: taskName, time: timeString), day, nil)
+                }
+            })
+        }
+    }
+    
+    private func startRecording() {
+        let audioSession = AVAudioSession.sharedInstance()
+        do {
+            try audioSession.setCategory(.playAndRecord, mode: .default)
+            try audioSession.setActive(true)
+            
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".m4a")
+            
+            let settings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 44100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+            
+            audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
+            audioRecorder?.record()
+            recordedAudioURL = fileURL
+            isRecording = true
+        } catch {
+            print("Failed to start recording: \(error)")
+        }
+    }
+    
+    private func stopRecording() {
+        audioRecorder?.stop()
+        isRecording = false
+    }
+}
+struct CategoryView: View {
+    var title: String
+    var icon: String
+    
+    var body: some View {
+        VStack {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(.blue)
+            Text(title)
+                .tint(.black)
+                .font(.headline)
+                .multilineTextAlignment(.center)
+                .padding(.top, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: 100)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(10)
+    }
 }
