@@ -1,3 +1,13 @@
+// aggiusta registrazioni audio delle categorie nella content
+//aggiusta il fatto che escono due salvataggi nella content
+//aggiungi che si possono poi categorizzare successivamente dalla lista che si ha
+//non si salvano piu le registrazioni delle quick add tasks
+//siri shortcuts per aggiungere task
+//accessibilità
+//dark mode
+//disegno???
+
+
 import SwiftUI
 import AVFoundation
 
@@ -6,20 +16,20 @@ struct ContentView: View {
     @State private var tasksByDay: [Int: [Task]] = [:]
     @State private var audioFilesByDay: [Int: [AudioFile]] = [:]
     @State private var showModal: Bool = false
-    
+
     var body: some View {
-        
+
         NavigationView {
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
                     Text("Today, \(formattedDate())")
                         .font(.headline)
                         .fontWeight(.bold)
-                    
+
                     Divider()
                 }
                 .padding()
-                
+
                 VStack(spacing: 10) {
                     ZStack(alignment: .bottom) {
                         ScrollViewReader { proxy in
@@ -30,7 +40,7 @@ struct ContentView: View {
                                             Text(weekday(for: day))
                                                 .font(.subheadline)
                                                 .foregroundColor(.gray)
-                                            
+
                                             ZStack {
                                                 Circle()
                                                     .fill(day == selectedDay ? Color.blue : Color.clear)
@@ -40,7 +50,7 @@ struct ContentView: View {
                                                     .fontWeight(.bold)
                                                     .foregroundColor(day == selectedDay ? .white : .black)
                                             }
-                                            
+
                                             ZStack {
                                                 if let tasksCount = tasksByDay[day]?.count, tasksCount > 0 {
                                                     Circle()
@@ -75,7 +85,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-                        
+
                         Image(systemName: "triangle.fill")
                             .resizable()
                             .frame(width: 12, height: 6)
@@ -83,35 +93,33 @@ struct ContentView: View {
                             .offset(y: 10)
                     }
                 }
-                
-                
+
                 .padding(.bottom, 20)
-                
+
                 VStack(spacing: 20) {
                     HStack(spacing: 20) {
-                        NavigationLink(destination: work()) {
-                            CategoryView(title: "Work", icon: "briefcase.fill")
+                        NavigationLink(destination: PersonalTasksView(tasksByDay: $tasksByDay)) {
+                            CategoryView(title: "Personal", icon: "person.fill", color: .red)
                         }
-                        NavigationLink(destination: personal()) {
-                            CategoryView(title: "Personal", icon: "person.fill")
+                        NavigationLink(destination: HobbyTasksView(tasksByDay: $tasksByDay)) {
+                            CategoryView(title: "Hobby", icon: "paintbrush.fill", color: .orange)
                         }
                     }
                     HStack(spacing: 20) {
-                        NavigationLink(destination: hobby()) {
-                            CategoryView(title: "Hobby", icon: "paintbrush.fill")
+                        NavigationLink(destination: WorkTasksView(tasksByDay: $tasksByDay)) {
+                            CategoryView(title: "Work", icon: "briefcase.fill", color: .teal)
                         }
-                        NavigationLink(destination: other()) {
-                            CategoryView(title: "Other", icon: "ellipsis.circle.fill")
+                        NavigationLink(destination: OtherTasksView(tasksByDay: $tasksByDay)) {
+                            CategoryView(title: "Other", icon: "ellipsis.circle.fill",color: .purple)
                         }
                     }
                 }
                 .padding(.horizontal)
-                
-                
-                List {
-                    if let tasks = tasksByDay[selectedDay], !tasks.isEmpty {
+
+                List {// Quick Added Tasks
+                    if let quickTasks = tasksByDay[selectedDay]?.filter({ $0.category == nil || $0.category == "Quick" }), !quickTasks.isEmpty {
                         Section(header: Text("Quick Added Tasks").font(.headline)) {
-                            ForEach(tasks) { task in
+                            ForEach(quickTasks) { task in
                                 HStack {
                                     Button(action: {
                                         if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
@@ -123,7 +131,7 @@ struct ContentView: View {
                                     }
                                     VStack(alignment: .leading) {
                                         Text(task.name)
-                                            .foregroundColor(task.isCompleted ? .black: .primary)
+                                            .foregroundColor(task.isCompleted ? .black : .primary)
                                         if let time = task.time {
                                             Text(time)
                                                 .font(.caption)
@@ -138,72 +146,171 @@ struct ContentView: View {
                         }
                     }
                     
-                    if let audioFiles = audioFilesByDay[selectedDay], !audioFiles.isEmpty {
-                        Section(header: Text("Quick Added Audio Recordings").font(.headline)) {
-                            ForEach(audioFiles) { audioFile in
+                    // Hobby Tasks
+                    if let hobbyTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Hobby" }), !hobbyTasks.isEmpty {
+                        Section(header: Text("Hobby Tasks").font(.headline)) {
+                            ForEach(hobbyTasks) { task in
                                 HStack {
                                     Button(action: {
-                                        if let index = audioFilesByDay[selectedDay]?.firstIndex(where: { $0.id == audioFile.id }) {
-                                            audioFilesByDay[selectedDay]?[index].isCompleted.toggle()
+                                        if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksByDay[selectedDay]?[index].isCompleted.toggle()
                                         }
                                     }) {
-                                        Image(systemName: audioFile.isCompleted ? "checkmark.circle.fill" : "circle")
-                                            .foregroundColor(audioFile.isCompleted ? .green : .gray)
+                                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(task.isCompleted ? .green : .gray)
                                     }
                                     VStack(alignment: .leading) {
-                                        Text(audioFile.url.deletingPathExtension().lastPathComponent)
-                                            .lineLimit(1)
-                                        if let time = audioFile.time {
+                                        Text(task.name)
+                                            .foregroundColor(task.isCompleted ? .black : .primary)
+                                        if let time = task.time {
                                             Text(time)
                                                 .font(.caption)
                                                 .foregroundColor(.gray)
                                         }
                                     }
-                                    Spacer()
-                                    Button(action: {
-                                        playAudio(url: audioFile.url)
-                                    }) {
-                                        Image(systemName: "play.circle")
-                                            .foregroundColor(.blue)
-                                    }
                                 }
                             }
                             .onDelete { indexSet in
-                                indexSet.forEach { index in
-                                    if let audioFile = audioFilesByDay[selectedDay]?[index] {
-                                        try? FileManager.default.removeItem(at: audioFile.url)
-                                    }
-                                }
-                                audioFilesByDay[selectedDay]?.remove(atOffsets: indexSet)
+                                tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
                             }
                         }
                     }
                     
+                    // Other Tasks
+                    if let otherTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Other" }), !otherTasks.isEmpty {
+                        Section(header: Text("Other Tasks").font(.headline)) {
+                            ForEach(otherTasks) { task in
+                                HStack {
+                                    Button(action: {
+                                        if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(task.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(task.name)
+                                            .foregroundColor(task.isCompleted ? .black : .primary)
+                                        if let time = task.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
+                    // Work Tasks
+                    if let workTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Work" }), !workTasks.isEmpty {
+                        Section(header: Text("Work Tasks").font(.headline)) {
+                            ForEach(workTasks) { task in
+                                HStack {
+                                    Button(action: {
+                                        if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(task.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(task.name)
+                                            .foregroundColor(task.isCompleted ? .black : .primary)
+                                        if let time = task.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
+                    // Personal Tasks
+                    if let personalTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Personal" }), !personalTasks.isEmpty {
+                        Section(header: Text("Personal Tasks").font(.headline)) {
+                            ForEach(personalTasks) { task in
+                                HStack {
+                                    Button(action: {
+                                        if let index = tasksByDay[selectedDay]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(task.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(task.name)
+                                            .foregroundColor(task.isCompleted ? .black : .primary)
+                                        if let time = task.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
+                    // Empty State
                     if (tasksByDay[selectedDay]?.isEmpty ?? true) && (audioFilesByDay[selectedDay]?.isEmpty ?? true) {
-                        Text("Nothing planned for today!")
-                            .foregroundColor(.gray)
+                        VStack(spacing: 10) {
+                            Spacer()
+                            VStack(spacing: 10) {
+                                Image(systemName: "calendar.badge.exclamationmark")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.gray)
+                                    .opacity(0.5)
+                                Text("Nothing planned for today!")
+                                    .font(.headline)
+                                    .foregroundColor(.gray)
+                                    .opacity(0.5)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .listRowBackground(Color.clear)
                     }
                 }
-                .padding(.top, 20)
-                
+
+
+
                 HStack {
                     Button(action: {
                         showModal = true
                     }) {
                         HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 20))
+
                             Text("Quick Add Task")
                                 .font(.body)
+                                .fontWeight(.semibold)
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 25))
                         }
                         .foregroundColor(.blue)
+
+                        Spacer()
+
                     }
-                    .padding(.leading)
-                    
+                    .padding(.leading, 210)
                     Spacer()
                 }
                 .padding(.bottom, 10)
-                
+
                 Spacer()
             }.background(Color(UIColor.systemGroupedBackground))
         }
@@ -215,7 +322,7 @@ struct ContentView: View {
                 if !task.name.isEmpty {
                     tasksByDay[day]?.append(task)
                 }
-                
+
                 if let audioURL = audioURL {
                     if audioFilesByDay[day] == nil {
                         audioFilesByDay[day] = []
@@ -227,12 +334,12 @@ struct ContentView: View {
                     try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
                     audioFilesByDay[day]?.append(AudioFile(url: renamedURL))
                 }
-                
+
                 showModal = false // Chiudi la modale dopo il salvataggio
             })
         }
     }
-    
+
     private func daysInMonth() -> [Int] {
         let calendar = Calendar.current
         let range = calendar.range(of: .day, in: .month, for: Date())!
@@ -248,7 +355,7 @@ struct ContentView: View {
         var components = calendar.dateComponents([.year, .month], from: Date())
         components.day = day
         let date = calendar.date(from: components) ?? Date()
-        
+
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE"
         return formatter.string(from: date)
@@ -264,7 +371,9 @@ struct Task: Identifiable {
     var name: String
     var isCompleted: Bool = false
     var time: String? // Ora opzionale
+    var category: String? // Per distinguere Hobby, Quick Add, ecc.
 }
+
 struct AudioFile: Identifiable {
     let id = UUID()
     var url: URL
@@ -284,13 +393,13 @@ struct AddTaskView: View {
     @State private var isRecording = false
     @State private var recordedAudioURL: URL?
     var addTask: (Task, Int, URL?) -> Void
-    
+
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
-                    
+
                     Button(action: {
                         if isRecording {
                             stopRecording()
@@ -304,7 +413,7 @@ struct AddTaskView: View {
                             Text(isRecording ? "Stop Recording" : "Record Audio")
                         }
                     }
-                    
+
                     if let audioURL = recordedAudioURL {
                         Text("Recorded: \(audioURL.lastPathComponent)")
                             .font(.subheadline)
@@ -312,7 +421,7 @@ struct AddTaskView: View {
                             .lineLimit(1)
                     }
                 }
-                
+
                 Section(header: Text("Date & Time")) {
                     DatePicker("Select Date", selection: $selectedDate, displayedComponents: [.date])
                         .datePickerStyle(GraphicalDatePickerStyle())
@@ -324,11 +433,11 @@ struct AddTaskView: View {
             .navigationBarItems(trailing:Button("Save") {
                 let calendar = Calendar.current
                 let day = calendar.component(.day, from: selectedDate)
-                
+
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedDate)
-                
+
                 if let audioURL = recordedAudioURL {
                     addTask(Task(name: "", time: timeString), day, audioURL)
                 } else if !taskName.isEmpty {
@@ -337,23 +446,23 @@ struct AddTaskView: View {
             })
         }
     }
-    
+
     private func startRecording() {
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.playAndRecord, mode: .default)
             try audioSession.setActive(true)
-            
+
             let tempDir = FileManager.default.temporaryDirectory
             let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".m4a")
-            
+
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
                 AVSampleRateKey: 44100,
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
             ]
-            
+
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             audioRecorder?.record()
             recordedAudioURL = fileURL
@@ -362,7 +471,7 @@ struct AddTaskView: View {
             print("Failed to start recording: \(error)")
         }
     }
-    
+
     private func stopRecording() {
         audioRecorder?.stop()
         isRecording = false
@@ -371,12 +480,13 @@ struct AddTaskView: View {
 struct CategoryView: View {
     var title: String
     var icon: String
-    
+    var color: Color
+
     var body: some View {
         VStack {
             Image(systemName: icon)
                 .font(.system(size: 20))
-                .foregroundColor(.blue)
+                .foregroundColor(color)
             Text(title)
                 .tint(.black)
                 .font(.headline)
@@ -388,3 +498,4 @@ struct CategoryView: View {
         .cornerRadius(10)
     }
 }
+
