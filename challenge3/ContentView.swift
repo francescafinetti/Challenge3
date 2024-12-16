@@ -1,14 +1,12 @@
 // aggiusta registrazioni audio delle categorie nella content
 //aggiungi che si possono poi categorizzare successivamente dalla lista che si ha
 //siri shortcuts per aggiungere task
+//reminder delle task con notifica? - attivare non disturbare 
 //accessibilità
-//dark mode
-//disegno???
 
 
 import SwiftUI
 import AVFoundation
-import PencilKit
 
 struct ContentView: View {
     @State private var selectedDay: Int = Calendar.current.component(.day, from: Date())
@@ -337,22 +335,34 @@ struct ContentView: View {
                         showModal = true
                     }) {
                         HStack {
-                            
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 25))
                             Text("Quick Add Task")
                                 .font(.body)
                                 .fontWeight(.semibold)
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 25))
                         }
                         .foregroundColor(.blue)
-                        
-                        Spacer()
-                        
                     }
-                    .padding(.leading, 210)
+                    .padding(.leading)
+                    
                     Spacer()
+                    
+                    NavigationLink(destination: CanvasView()) {
+                        HStack {
+                            Text("Canvas")
+                                .font(.body)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.blue)
+                            Image(systemName: "scribble.variable")
+                                .font(.system(size: 20))
+                                .foregroundColor(.blue)
+                           
+                        }
+                    }
+                    .padding(.trailing)
                 }
                 .padding(.bottom, 10)
+
                 
                 Spacer()
             }.background(Color(UIColor.systemGroupedBackground))
