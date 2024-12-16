@@ -13,7 +13,7 @@ struct AddWorkTaskView: View {
     var addTask: (WorkTask, Int, URL?) -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
@@ -52,13 +52,9 @@ struct AddWorkTaskView: View {
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
                 let task = WorkTask(name: taskName, isCompleted: false, time: timeString)
+                
+                // Usa la closure addTask per salvare il task
                 addTask(task, selectedDate, recordedAudioURL)
-
-                // Sync with tasksByDay in ContentView
-                if tasksByDay[selectedDate] == nil {
-                    tasksByDay[selectedDate] = []
-                }
-                tasksByDay[selectedDate]?.append(Task(name: taskName, isCompleted: false, time: timeString, category: "Work"))
             })
         }
     }

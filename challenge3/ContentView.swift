@@ -1,7 +1,5 @@
 // aggiusta registrazioni audio delle categorie nella content
-//aggiusta il fatto che escono due salvataggi nella content
 //aggiungi che si possono poi categorizzare successivamente dalla lista che si ha
-//non si salvano piu le registrazioni delle quick add tasks
 //siri shortcuts per aggiungere task
 //accessibilità
 //dark mode
@@ -10,26 +8,27 @@
 
 import SwiftUI
 import AVFoundation
+import PencilKit
 
 struct ContentView: View {
     @State private var selectedDay: Int = Calendar.current.component(.day, from: Date())
     @State private var tasksByDay: [Int: [Task]] = [:]
     @State private var audioFilesByDay: [Int: [AudioFile]] = [:]
     @State private var showModal: Bool = false
-
+    
     var body: some View {
-
-        NavigationView {
+        
+        NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
                     Text("Today, \(formattedDate())")
                         .font(.headline)
                         .fontWeight(.bold)
-
+                    
                     Divider()
                 }
                 .padding()
-
+                
                 VStack(spacing: 10) {
                     ZStack(alignment: .bottom) {
                         ScrollViewReader { proxy in
@@ -40,7 +39,7 @@ struct ContentView: View {
                                             Text(weekday(for: day))
                                                 .font(.subheadline)
                                                 .foregroundColor(.gray)
-
+                                            
                                             ZStack {
                                                 Circle()
                                                     .fill(day == selectedDay ? Color.blue : Color.clear)
@@ -48,9 +47,9 @@ struct ContentView: View {
                                                 Text("\(day)")
                                                     .font(.body)
                                                     .fontWeight(.bold)
-                                                    .foregroundColor(day == selectedDay ? .white : .black)
+                                                    .foregroundColor(day == selectedDay ? .white : .accent)
                                             }
-
+                                            
                                             ZStack {
                                                 if let tasksCount = tasksByDay[day]?.count, tasksCount > 0 {
                                                     Circle()
@@ -85,7 +84,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-
+                        
                         Image(systemName: "triangle.fill")
                             .resizable()
                             .frame(width: 12, height: 6)
@@ -93,9 +92,9 @@ struct ContentView: View {
                             .offset(y: 10)
                     }
                 }
-
+                
                 .padding(.bottom, 20)
-
+                
                 VStack(spacing: 20) {
                     HStack(spacing: 20) {
                         NavigationLink(destination: PersonalTasksView(tasksByDay: $tasksByDay)) {
@@ -115,7 +114,7 @@ struct ContentView: View {
                     }
                 }
                 .padding(.horizontal)
-
+                
                 List {// Quick Added Tasks
                     if let quickTasks = tasksByDay[selectedDay]?.filter({ $0.category == nil || $0.category == "Quick" }), !quickTasks.isEmpty {
                         Section(header: Text("Quick Added Tasks").font(.headline)) {
@@ -145,6 +144,50 @@ struct ContentView: View {
                             }
                         }
                     }
+                    
+                    // Quick Added Audio
+                    if let audioFiles = audioFilesByDay[selectedDay], !audioFiles.isEmpty {
+                        Section(header: Text("Quick Audio Notes").font(.headline)) {
+                            ForEach(audioFiles) { audio in
+                                HStack {
+                                    Button(action: {
+                                        if let index = audioFilesByDay[selectedDay]?.firstIndex(where: { $0.id == audio.id }) {
+                                            audioFilesByDay[selectedDay]?[index].isCompleted.toggle()
+                                        }
+                                    }) {
+                                        Image(systemName: audio.isCompleted ? "checkmark.circle.fill" : "circle")
+                                            .foregroundColor(audio.isCompleted ? .green : .gray)
+                                    }
+                                    VStack(alignment: .leading) {
+                                        Text(audio.url.lastPathComponent)
+                                            .foregroundColor(.primary)
+                                            .lineLimit(1)
+                                        if let time = audio.time {
+                                            Text(time)
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                    Spacer()
+                                    Button(action: {
+                                        playAudio(url: audio.url)
+                                    }) {
+                                        Image(systemName: "play.circle.fill")
+                                            .foregroundColor(.blue)
+                                    }
+                                }
+                            }
+                            .onDelete { indexSet in
+                                indexSet.forEach { index in
+                                    if let audioFile = audioFilesByDay[selectedDay]?[index] {
+                                        try? FileManager.default.removeItem(at: audioFile.url)
+                                    }
+                                }
+                                audioFilesByDay[selectedDay]?.remove(atOffsets: indexSet)
+                            }
+                        }
+                    }
+                    
                     
                     // Hobby Tasks
                     if let hobbyTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Hobby" }), !hobbyTasks.isEmpty {
@@ -255,7 +298,7 @@ struct ContentView: View {
                                         if let time = task.time {
                                             Text(time)
                                                 .font(.caption)
-                                                .foregroundColor(.gray)
+                                                .foregroundColor(.accent)
                                         }
                                     }
                                 }
@@ -286,15 +329,15 @@ struct ContentView: View {
                         .listRowBackground(Color.clear)
                     }
                 }
-
-
-
+                
+                
+                
                 HStack {
                     Button(action: {
                         showModal = true
                     }) {
                         HStack {
-
+                            
                             Text("Quick Add Task")
                                 .font(.body)
                                 .fontWeight(.semibold)
@@ -302,15 +345,15 @@ struct ContentView: View {
                                 .font(.system(size: 25))
                         }
                         .foregroundColor(.blue)
-
+                        
                         Spacer()
-
+                        
                     }
                     .padding(.leading, 210)
                     Spacer()
                 }
                 .padding(.bottom, 10)
-
+                
                 Spacer()
             }.background(Color(UIColor.systemGroupedBackground))
         }
@@ -322,7 +365,7 @@ struct ContentView: View {
                 if !task.name.isEmpty {
                     tasksByDay[day]?.append(task)
                 }
-
+                
                 if let audioURL = audioURL {
                     if audioFilesByDay[day] == nil {
                         audioFilesByDay[day] = []
@@ -334,12 +377,12 @@ struct ContentView: View {
                     try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
                     audioFilesByDay[day]?.append(AudioFile(url: renamedURL))
                 }
-
+                
                 showModal = false // Chiudi la modale dopo il salvataggio
             })
         }
     }
-
+    
     private func daysInMonth() -> [Int] {
         let calendar = Calendar.current
         let range = calendar.range(of: .day, in: .month, for: Date())!
@@ -355,7 +398,7 @@ struct ContentView: View {
         var components = calendar.dateComponents([.year, .month], from: Date())
         components.day = day
         let date = calendar.date(from: components) ?? Date()
-
+        
         let formatter = DateFormatter()
         formatter.dateFormat = "EEE"
         return formatter.string(from: date)
@@ -385,6 +428,8 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
+
+
 struct AddTaskView: View {
     @Binding var selectedDay: Int
     @State private var taskName: String = ""
@@ -393,13 +438,13 @@ struct AddTaskView: View {
     @State private var isRecording = false
     @State private var recordedAudioURL: URL?
     var addTask: (Task, Int, URL?) -> Void
-
+    
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
-
+                    
                     Button(action: {
                         if isRecording {
                             stopRecording()
@@ -413,7 +458,7 @@ struct AddTaskView: View {
                             Text(isRecording ? "Stop Recording" : "Record Audio")
                         }
                     }
-
+                    
                     if let audioURL = recordedAudioURL {
                         Text("Recorded: \(audioURL.lastPathComponent)")
                             .font(.subheadline)
@@ -421,7 +466,7 @@ struct AddTaskView: View {
                             .lineLimit(1)
                     }
                 }
-
+                
                 Section(header: Text("Date & Time")) {
                     DatePicker("Select Date", selection: $selectedDate, displayedComponents: [.date])
                         .datePickerStyle(GraphicalDatePickerStyle())
@@ -433,11 +478,11 @@ struct AddTaskView: View {
             .navigationBarItems(trailing:Button("Save") {
                 let calendar = Calendar.current
                 let day = calendar.component(.day, from: selectedDate)
-
+                
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedDate)
-
+                
                 if let audioURL = recordedAudioURL {
                     addTask(Task(name: "", time: timeString), day, audioURL)
                 } else if !taskName.isEmpty {
@@ -446,23 +491,23 @@ struct AddTaskView: View {
             })
         }
     }
-
+    
     private func startRecording() {
         let audioSession = AVAudioSession.sharedInstance()
         do {
             try audioSession.setCategory(.playAndRecord, mode: .default)
             try audioSession.setActive(true)
-
+            
             let tempDir = FileManager.default.temporaryDirectory
             let fileURL = tempDir.appendingPathComponent(UUID().uuidString + ".m4a")
-
+            
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
                 AVSampleRateKey: 44100,
                 AVNumberOfChannelsKey: 1,
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
             ]
-
+            
             audioRecorder = try AVAudioRecorder(url: fileURL, settings: settings)
             audioRecorder?.record()
             recordedAudioURL = fileURL
@@ -471,7 +516,7 @@ struct AddTaskView: View {
             print("Failed to start recording: \(error)")
         }
     }
-
+    
     private func stopRecording() {
         audioRecorder?.stop()
         isRecording = false
@@ -481,14 +526,14 @@ struct CategoryView: View {
     var title: String
     var icon: String
     var color: Color
-
+    
     var body: some View {
         VStack {
             Image(systemName: icon)
                 .font(.system(size: 20))
                 .foregroundColor(color)
             Text(title)
-                .tint(.black)
+                .tint(.accent)
                 .font(.headline)
                 .multilineTextAlignment(.center)
                 .padding(.top, 4)

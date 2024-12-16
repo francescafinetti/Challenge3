@@ -9,7 +9,7 @@ struct HobbyTasksView: View {
     @Binding var tasksByDay: [Int: [Task]]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
                     Divider()
@@ -21,7 +21,7 @@ struct HobbyTasksView: View {
                         ScrollViewReader { proxy in
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 20) {
-                                    ForEach(getDaysInCurrentMonth(), id: \ .self) { day in
+                                    ForEach(getDaysInCurrentMonth(), id: \.self) { day in
                                         VStack(spacing: 4) {
                                             Text(getDayOfWeek(for: day))
                                                 .font(.subheadline)
@@ -34,7 +34,7 @@ struct HobbyTasksView: View {
                                                 Text("\(day)")
                                                     .font(.body)
                                                     .fontWeight(.bold)
-                                                    .foregroundColor(day == selectedDate ? .white : .black)
+                                                    .foregroundColor(day == selectedDate ? .white : .accent)
                                             }
 
                                             ZStack {
@@ -202,7 +202,7 @@ struct HobbyTasksView: View {
         .sheet(isPresented: $isModalPresented) {
             AddHobbyTaskView(
                 selectedDate: $selectedDate,
-                tasksByDay: $tasksByDay, // Passa il binding
+                tasksByDay: $tasksByDay,
                 addTask: { task, day, audioURL in
                     if tasksForHobby[day] == nil {
                         tasksForHobby[day] = []
@@ -221,6 +221,7 @@ struct HobbyTasksView: View {
                         try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
                         audioForHobby[day]?.append(HobbyAudioFile(url: renamedURL))
                     }
+                    isModalPresented = false // Chiude la sheet
                 }
             )
         }
@@ -262,7 +263,6 @@ struct HobbyAudioFile: Identifiable {
     var isCompleted: Bool = false
     var time: String? // Optional time
 }
-
 
 struct HobbyTasksView_Previews: PreviewProvider {
     static var previews: some View {

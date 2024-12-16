@@ -9,7 +9,7 @@ struct OtherTasksView: View {
     @Binding var tasksByDay: [Int: [Task]]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
                     Divider()
@@ -21,7 +21,7 @@ struct OtherTasksView: View {
                         ScrollViewReader { proxy in
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 20) {
-                                    ForEach(getDaysInCurrentMonth(), id: \ .self) { day in
+                                    ForEach(getDaysInCurrentMonth(), id: \.self) { day in
                                         VStack(spacing: 4) {
                                             Text(getDayOfWeek(for: day))
                                                 .font(.subheadline)
@@ -34,7 +34,7 @@ struct OtherTasksView: View {
                                                 Text("\(day)")
                                                     .font(.body)
                                                     .fontWeight(.bold)
-                                                    .foregroundColor(day == selectedDate ? .white : .black)
+                                                    .foregroundColor(day == selectedDate ? .white : .accent)
                                             }
 
                                             ZStack {
@@ -183,7 +183,6 @@ struct OtherTasksView: View {
                                 .fontWeight(.semibold)
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 25))
-
                         }
                         .foregroundColor(.purple)
                     }
@@ -202,7 +201,7 @@ struct OtherTasksView: View {
         .sheet(isPresented: $isModalPresented) {
             AddOtherTaskView(
                 selectedDate: $selectedDate,
-                tasksByDay: $tasksByDay, // Passa il binding
+                tasksByDay: $tasksByDay,
                 addTask: { task, day, audioURL in
                     if tasksForOther[day] == nil {
                         tasksForOther[day] = []
@@ -229,7 +228,7 @@ struct OtherTasksView: View {
                         audioForOther[day]?.append(OtherAudioFile(url: renamedURL))
                     }
 
-                    isModalPresented = false // Close the modal after saving
+                    isModalPresented = false
                 }
             )
         }

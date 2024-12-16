@@ -23,7 +23,7 @@ struct AddPersonalTaskView: View {
     var addTask: (PersonalTask, Int, URL?) -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
@@ -62,13 +62,9 @@ struct AddPersonalTaskView: View {
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
                 let task = PersonalTask(name: taskName, isCompleted: false, time: timeString)
+                
+                // Usa il callback addTask per aggiornare solo tasksByDay
                 addTask(task, selectedDate, recordedAudioURL)
-
-                // Sync with tasksByDay in ContentView
-                if tasksByDay[selectedDate] == nil {
-                    tasksByDay[selectedDate] = []
-                }
-                tasksByDay[selectedDate]?.append(Task(name: taskName, isCompleted: false, time: timeString, category: "Personal"))
             })
         }
     }

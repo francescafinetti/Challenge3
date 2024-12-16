@@ -1,10 +1,9 @@
 import SwiftUI
 import AVFoundation
 
-
 struct AddOtherTaskView: View {
     @Binding var selectedDate: Int
-    @Binding var tasksByDay: [Int: [Task]]
+    @Binding var tasksByDay: [Int: [Task]] // Riferimento condiviso con ContentView
     @State private var taskName: String = ""
     @State private var selectedTaskTime: Date = Date()
     @State private var isRecording: Bool = false
@@ -14,7 +13,7 @@ struct AddOtherTaskView: View {
     var addTask: (OtherTask, Int, URL?) -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
@@ -53,9 +52,11 @@ struct AddOtherTaskView: View {
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
                 let task = OtherTask(name: taskName, isCompleted: false, time: timeString)
+                
+                // Usa il callback addTask per aggiornare tasksForOther
                 addTask(task, selectedDate, recordedAudioURL)
 
-                // Sync with tasksByDay in ContentView
+                // Aggiungi il task alla struttura condivisa tasksByDay
                 if tasksByDay[selectedDate] == nil {
                     tasksByDay[selectedDate] = []
                 }

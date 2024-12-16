@@ -1,13 +1,5 @@
-//
-//  work.swift
-//  challenge3
-//
-//  Created by Francesca Finetti on 10/12/24.
-//
-
 import SwiftUI
 import AVFoundation
-
 
 struct AddHobbyTaskView: View {
     @Binding var selectedDate: Int
@@ -21,7 +13,7 @@ struct AddHobbyTaskView: View {
     var addTask: (HobbyTask, Int, URL?) -> Void
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             Form {
                 Section(header: Text("Task Details")) {
                     TextField("Task Name", text: $taskName)
@@ -59,16 +51,19 @@ struct AddHobbyTaskView: View {
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
+                // Crea il task per Hobby
                 let task = HobbyTask(name: taskName, isCompleted: false, time: timeString)
+
+                // Usa il callback addTask per gestire eventuali azioni aggiuntive
                 addTask(task, selectedDate, recordedAudioURL)
 
-                // Sync with tasksByDay in ContentView
+                // Salva direttamente in tasksByDay come Task con categoria "Hobby"
                 if tasksByDay[selectedDate] == nil {
                     tasksByDay[selectedDate] = []
                 }
                 tasksByDay[selectedDate]?.append(Task(name: taskName, isCompleted: false, time: timeString, category: "Hobby"))
-            }
-        )}
+            })
+        }
     }
 
     private func startRecording() {

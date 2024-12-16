@@ -9,7 +9,7 @@ struct PersonalTasksView: View {
     @Binding var tasksByDay: [Int: [Task]]
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 VStack(spacing: 8) {
                     Divider()
@@ -34,7 +34,7 @@ struct PersonalTasksView: View {
                                                 Text("\(day)")
                                                     .font(.body)
                                                     .fontWeight(.bold)
-                                                    .foregroundColor(day == selectedDate ? .white : .black)
+                                                    .foregroundColor(day == selectedDate ? .white : .accent)
                                             }
 
                                             ZStack {
