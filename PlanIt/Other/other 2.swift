@@ -1,7 +1,14 @@
+//
+//  Untitled.swift
+//  PlanIt
+//
+//  Created by Francesca Finetti on 18/12/24.
+//
+
 import SwiftUI
 import AVFoundation
 
-struct AddHobbyTaskView: View {
+struct AddOtherTaskView: View {
     @Binding var selectedDate: Int
     @Binding var tasksByDay: [Int: [Task]]
     @State private var taskName: String = ""
@@ -10,7 +17,7 @@ struct AddHobbyTaskView: View {
     @State private var recordedAudioURL: URL?
     @State private var audioRecorder: AVAudioRecorder?
 
-    var addTask: (HobbyTask, Int, URL?) -> Void
+    var addTask: (OtherTask, Int, URL?) -> Void
 
     var body: some View {
         NavigationStack {
@@ -23,7 +30,7 @@ struct AddHobbyTaskView: View {
                     }) {
                         HStack {
                             Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                                .foregroundColor(isRecording ? .red : .orange)
+                                .foregroundColor(isRecording ? .red : .purple)
                             Text(isRecording ? "Stop Recording" : "Record Audio")
                         }
                     }
@@ -45,23 +52,15 @@ struct AddHobbyTaskView: View {
                         .labelsHidden()
                 }
             }
-            .navigationTitle("Add Hobby Task")
+            .navigationTitle("Add Other Task")
             .navigationBarItems(trailing: Button("Save") {
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
-                // Crea il task per Hobby
-                let task = HobbyTask(name: taskName, isCompleted: false, time: timeString)
-
-                // Usa il callback addTask per gestire eventuali azioni aggiuntive
+                let task = OtherTask(name: taskName, isCompleted: false, time: timeString)
+                
                 addTask(task, selectedDate, recordedAudioURL)
-
-                // Salva direttamente in tasksByDay come Task con categoria "Hobby"
-                if tasksByDay[selectedDate] == nil {
-                    tasksByDay[selectedDate] = []
-                }
-                tasksByDay[selectedDate]?.append(Task(name: taskName, isCompleted: false, time: timeString, category: "Hobby"))
             })
         }
     }
@@ -105,5 +104,11 @@ struct AddHobbyTaskView: View {
 
     private func getDayFromDate(_ date: Date) -> Int {
         return Calendar.current.component(.day, from: date)
+    }
+}
+
+struct AddOtherTaskView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddOtherTaskView(selectedDate: .constant(18), tasksByDay: .constant([:]), addTask: { _, _, _ in })
     }
 }

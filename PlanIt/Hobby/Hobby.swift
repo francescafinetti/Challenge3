@@ -1,10 +1,17 @@
+//
+//  Untitled.swift
+//  PlanIt
+//
+//  Created by Francesca Finetti on 18/12/24.
+//
+
 import SwiftUI
 import AVFoundation
 
-struct OtherTasksView: View {
+struct HobbyTasksView: View {
     @State private var selectedDate: Int = Calendar.current.component(.day, from: Date())
-    @State private var tasksForOther: [Int: [OtherTask]] = [:]
-    @State private var audioForOther: [Int: [OtherAudioFile]] = [:]
+    @State private var tasksForHobby: [Int: [HobbyTask]] = [:]
+    @State private var audioForHobby: [Int: [HobbyAudioFile]] = [:]
     @State private var isModalPresented: Bool = false
     @Binding var tasksByDay: [Int: [Task]]
 
@@ -21,7 +28,7 @@ struct OtherTasksView: View {
                         ScrollViewReader { proxy in
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 20) {
-                                    ForEach(getDaysInCurrentMonth(), id: \.self) { day in
+                                    ForEach(getDaysInCurrentMonth(), id: \ .self) { day in
                                         VStack(spacing: 4) {
                                             Text(getDayOfWeek(for: day))
                                                 .font(.subheadline)
@@ -29,7 +36,7 @@ struct OtherTasksView: View {
 
                                             ZStack {
                                                 Circle()
-                                                    .fill(day == selectedDate ? Color.purple : Color.clear)
+                                                    .fill(day == selectedDate ? Color.orange : Color.clear)
                                                     .frame(width: 36, height: 36)
                                                 Text("\(day)")
                                                     .font(.body)
@@ -38,9 +45,9 @@ struct OtherTasksView: View {
                                             }
 
                                             ZStack {
-                                                if let taskCount = tasksForOther[day]?.count, taskCount > 0 {
+                                                if let taskCount = tasksForHobby[day]?.count, taskCount > 0 {
                                                     Circle()
-                                                        .fill(Color.purple)
+                                                        .fill(Color.orange)
                                                         .frame(width: 20, height: 20)
                                                     Text("\(taskCount)")
                                                         .font(.caption)
@@ -75,20 +82,20 @@ struct OtherTasksView: View {
                         Image(systemName: "triangle.fill")
                             .resizable()
                             .frame(width: 12, height: 6)
-                            .foregroundColor(.purple)
+                            .foregroundColor(.orange)
                             .offset(y: 10)
                     }
                 }
                 .padding(.bottom, 20)
 
                 List {
-                    if let tasks = tasksForOther[selectedDate], !tasks.isEmpty {
-                        Section(header: Text("Other Tasks").font(.headline)) {
+                    if let tasks = tasksForHobby[selectedDate], !tasks.isEmpty {
+                        Section(header: Text("Hobby Tasks").font(.headline)) {
                             ForEach(tasks) { task in
                                 HStack {
                                     Button(action: {
-                                        if let index = tasksForOther[selectedDate]?.firstIndex(where: { $0.id == task.id }) {
-                                            tasksForOther[selectedDate]?[index].isCompleted.toggle()
+                                        if let index = tasksForHobby[selectedDate]?.firstIndex(where: { $0.id == task.id }) {
+                                            tasksForHobby[selectedDate]?[index].isCompleted.toggle()
                                         }
                                     }) {
                                         Image(systemName: task.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -106,18 +113,18 @@ struct OtherTasksView: View {
                                 }
                             }
                             .onDelete { indexSet in
-                                tasksForOther[selectedDate]?.remove(atOffsets: indexSet)
+                                tasksForHobby[selectedDate]?.remove(atOffsets: indexSet)
                             }
                         }
                     }
 
-                    if let audioFiles = audioForOther[selectedDate], !audioFiles.isEmpty {
-                        Section(header: Text("Other Audio Notes").font(.headline)) {
+                    if let audioFiles = audioForHobby[selectedDate], !audioFiles.isEmpty {
+                        Section(header: Text("Hobby Audio Notes").font(.headline)) {
                             ForEach(audioFiles) { audioFile in
                                 HStack {
                                     Button(action: {
-                                        if let index = audioForOther[selectedDate]?.firstIndex(where: { $0.id == audioFile.id }) {
-                                            audioForOther[selectedDate]?[index].isCompleted.toggle()
+                                        if let index = audioForHobby[selectedDate]?.firstIndex(where: { $0.id == audioFile.id }) {
+                                            audioForHobby[selectedDate]?[index].isCompleted.toggle()
                                         }
                                     }) {
                                         Image(systemName: audioFile.isCompleted ? "checkmark.circle.fill" : "circle")
@@ -137,22 +144,22 @@ struct OtherTasksView: View {
                                         playAudio(url: audioFile.url)
                                     }) {
                                         Image(systemName: "play.circle")
-                                            .foregroundColor(.purple)
+                                            .foregroundColor(.orange)
                                     }
                                 }
                             }
                             .onDelete { indexSet in
                                 indexSet.forEach { index in
-                                    if let audioFile = audioForOther[selectedDate]?[index] {
+                                    if let audioFile = audioForHobby[selectedDate]?[index] {
                                         try? FileManager.default.removeItem(at: audioFile.url)
                                     }
                                 }
-                                audioForOther[selectedDate]?.remove(atOffsets: indexSet)
+                                audioForHobby[selectedDate]?.remove(atOffsets: indexSet)
                             }
                         }
                     }
 
-                    if (tasksForOther[selectedDate]?.isEmpty ?? true) && (audioForOther[selectedDate]?.isEmpty ?? true) {
+                    if (tasksForHobby[selectedDate]?.isEmpty ?? true) && (audioForHobby[selectedDate]?.isEmpty ?? true) {
                         VStack(spacing: 10) {
                             Spacer()
                             VStack(spacing: 10) {
@@ -178,15 +185,16 @@ struct OtherTasksView: View {
                         isModalPresented = true
                     }) {
                         HStack {
-                            Text("Add Other Task")
+                            Text("Add Hobby Task")
                                 .font(.body)
                                 .fontWeight(.semibold)
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 25))
+                            
                         }
-                        .foregroundColor(.purple)
+                        .foregroundColor(.orange)
                     }
-                    .padding(.leading, 210)
+                    .padding(.leading, 190)
 
                     Spacer()
                 }
@@ -196,41 +204,37 @@ struct OtherTasksView: View {
             }
             .background(Color(UIColor.systemGroupedBackground))
         }
-        .navigationTitle("Other")
+        .navigationTitle("Hobby")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $isModalPresented) {
-            AddOtherTaskView(
-                selectedDate: $selectedDate,
-                tasksByDay: $tasksByDay,
-                addTask: { task, day, audioURL in
-                    if tasksForOther[day] == nil {
-                        tasksForOther[day] = []
-                    }
-                    if !task.name.isEmpty {
-                        tasksForOther[day]?.append(task)
-                    }
-
-                    // Sync with tasksByDay in ContentView
-                    if tasksByDay[day] == nil {
-                        tasksByDay[day] = []
-                    }
-                    tasksByDay[day]?.append(Task(name: task.name, isCompleted: task.isCompleted, time: task.time, category: "Other"))
-
-                    if let audioURL = audioURL {
-                        if audioForOther[day] == nil {
-                            audioForOther[day] = []
-                        }
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-                        let dateString = formatter.string(from: Date())
-                        let renamedURL = audioURL.deletingLastPathComponent().appendingPathComponent("\(dateString).m4a")
-                        try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
-                        audioForOther[day]?.append(OtherAudioFile(url: renamedURL))
-                    }
-
-                    isModalPresented = false
+            AddHobbyTaskView(selectedDate: $selectedDate, tasksByDay: $tasksByDay, addTask: { task, day, audioURL in
+                if tasksForHobby[day] == nil {
+                    tasksForHobby[day] = []
                 }
-            )
+                if !task.name.isEmpty {
+                    tasksForHobby[day]?.append(task)
+                }
+
+                // Sync with tasksByDay in ContentView
+                if tasksByDay[day] == nil {
+                    tasksByDay[day] = []
+                }
+                tasksByDay[day]?.append(Task(name: task.name, isCompleted: task.isCompleted, time: task.time, category: "Hobby"))
+
+                if let audioURL = audioURL {
+                    if audioForHobby[day] == nil {
+                        audioForHobby[day] = []
+                    }
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+                    let dateString = formatter.string(from: Date())
+                    let renamedURL = audioURL.deletingLastPathComponent().appendingPathComponent("\(dateString).m4a")
+                    try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
+                    audioForHobby[day]?.append(HobbyAudioFile(url: renamedURL))
+                }
+
+                isModalPresented = false // Close the modal after saving
+            })
         }
     }
 
@@ -257,22 +261,24 @@ struct OtherTasksView: View {
     }
 }
 
-struct OtherTask: Identifiable {
+struct HobbyTask: Identifiable {
     let id = UUID()
     var name: String
     var isCompleted: Bool = false
     var time: String? // Optional time
 }
 
-struct OtherAudioFile: Identifiable {
+struct HobbyAudioFile: Identifiable {
     let id = UUID()
     var url: URL
     var isCompleted: Bool = false
     var time: String? // Optional time
 }
 
-struct OtherTasksView_Previews: PreviewProvider {
+
+struct HobbyTasksView_Previews: PreviewProvider {
     static var previews: some View {
-        OtherTasksView(tasksByDay: .constant([:]))
+        HobbyTasksView(tasksByDay: .constant([:]))
     }
 }
+

@@ -1,16 +1,23 @@
+//
+//  Untitled.swift
+//  PlanIt
+//
+//  Created by Francesca Finetti on 18/12/24.
+//
+
 import SwiftUI
 import AVFoundation
 
-struct AddOtherTaskView: View {
+struct AddHobbyTaskView: View {
     @Binding var selectedDate: Int
-    @Binding var tasksByDay: [Int: [Task]] // Riferimento condiviso con ContentView
+    @Binding var tasksByDay: [Int: [Task]]
     @State private var taskName: String = ""
     @State private var selectedTaskTime: Date = Date()
     @State private var isRecording: Bool = false
     @State private var recordedAudioURL: URL?
     @State private var audioRecorder: AVAudioRecorder?
 
-    var addTask: (OtherTask, Int, URL?) -> Void
+    var addTask: (HobbyTask, Int, URL?) -> Void
 
     var body: some View {
         NavigationStack {
@@ -23,7 +30,7 @@ struct AddOtherTaskView: View {
                     }) {
                         HStack {
                             Image(systemName: isRecording ? "stop.circle.fill" : "mic.circle.fill")
-                                .foregroundColor(isRecording ? .red : .purple)
+                                .foregroundColor(isRecording ? .red : .orange)
                             Text(isRecording ? "Stop Recording" : "Record Audio")
                         }
                     }
@@ -45,22 +52,15 @@ struct AddOtherTaskView: View {
                         .labelsHidden()
                 }
             }
-            .navigationTitle("Add Other Task")
+            .navigationTitle("Add Hobby Task")
             .navigationBarItems(trailing: Button("Save") {
                 let timeFormatter = DateFormatter()
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedTaskTime)
 
-                let task = OtherTask(name: taskName, isCompleted: false, time: timeString)
+                let task = HobbyTask(name: taskName, isCompleted: false, time: timeString)
                 
-                // Usa il callback addTask per aggiornare tasksForOther
                 addTask(task, selectedDate, recordedAudioURL)
-
-                // Aggiungi il task alla struttura condivisa tasksByDay
-                if tasksByDay[selectedDate] == nil {
-                    tasksByDay[selectedDate] = []
-                }
-                tasksByDay[selectedDate]?.append(Task(name: taskName, isCompleted: false, time: timeString, category: "Other"))
             })
         }
     }

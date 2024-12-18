@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		F9D7EFEA2D06F7D50050BC36 /* challenge3.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = challenge3.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F9D7EFEA2D06F7D50050BC36 /* PlanIt.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PlanIt.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		F9D7EFEC2D06F7D50050BC36 /* challenge3 */ = {
+		F9D7EFEC2D06F7D50050BC36 /* PlanIt */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = challenge3;
+			path = PlanIt;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		F9D7EFE12D06F7D50050BC36 = {
 			isa = PBXGroup;
 			children = (
-				F9D7EFEC2D06F7D50050BC36 /* challenge3 */,
+				F9D7EFEC2D06F7D50050BC36 /* PlanIt */,
 				F9D7EFEB2D06F7D50050BC36 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		F9D7EFEB2D06F7D50050BC36 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				F9D7EFEA2D06F7D50050BC36 /* challenge3.app */,
+				F9D7EFEA2D06F7D50050BC36 /* PlanIt.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		F9D7EFE92D06F7D50050BC36 /* challenge3 */ = {
+		F9D7EFE92D06F7D50050BC36 /* PlanIt */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = F9D7EFF82D06F7D60050BC36 /* Build configuration list for PBXNativeTarget "challenge3" */;
+			buildConfigurationList = F9D7EFF82D06F7D60050BC36 /* Build configuration list for PBXNativeTarget "PlanIt" */;
 			buildPhases = (
 				F9D7EFE62D06F7D50050BC36 /* Sources */,
 				F9D7EFE72D06F7D50050BC36 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				F9D7EFEC2D06F7D50050BC36 /* challenge3 */,
+				F9D7EFEC2D06F7D50050BC36 /* PlanIt */,
 			);
-			name = challenge3;
+			name = PlanIt;
 			packageProductDependencies = (
 			);
 			productName = challenge3;
-			productReference = F9D7EFEA2D06F7D50050BC36 /* challenge3.app */;
+			productReference = F9D7EFEA2D06F7D50050BC36 /* PlanIt.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				F9D7EFE92D06F7D50050BC36 /* challenge3 */,
+				F9D7EFE92D06F7D50050BC36 /* PlanIt */,
 			);
 		};
 /* End PBXProject section */
@@ -253,10 +253,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"challenge3/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"PlanIt/Preview Content\"";
 				DEVELOPMENT_TEAM = E73CXZ7E4M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "accesso al microfono";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -283,10 +284,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"challenge3/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"PlanIt/Preview Content\"";
 				DEVELOPMENT_TEAM = E73CXZ7E4M;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "accesso al microfono";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -318,7 +320,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		F9D7EFF82D06F7D60050BC36 /* Build configuration list for PBXNativeTarget "challenge3" */ = {
+		F9D7EFF82D06F7D60050BC36 /* Build configuration list for PBXNativeTarget "PlanIt" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F9D7EFF92D06F7D60050BC36 /* Debug */,
