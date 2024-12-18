@@ -70,22 +70,25 @@ struct AddTaskView: View {
                 timeFormatter.dateFormat = "HH:mm"
                 let timeString = timeFormatter.string(from: selectedDate)
                 
-                // Se il nome è vuoto ma c'è una registrazione, assegniamo un nome di default
-                let finalTaskName = taskName.isEmpty && recordedAudioURL != nil ? "Audio Task" : taskName
+                // Crea un nome file leggibile
+                let taskFileName = taskName.isEmpty ? "QuickTask" : taskName.replacingOccurrences(of: " ", with: "_")
+                var finalAudioURL: URL? = nil
                 
                 // Rinominare l'audio con un timestamp
-                var finalAudioURL: URL? = nil
                 if let url = recordedAudioURL {
                     let formatter = DateFormatter()
                     formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
                     let dateString = formatter.string(from: Date())
-                    let renamedURL = url.deletingLastPathComponent().appendingPathComponent("\(dateString).m4a")
+                    let renamedURL = url.deletingLastPathComponent().appendingPathComponent("\(taskFileName)_\(dateString).m4a")
+                    
                     try? FileManager.default.moveItem(at: url, to: renamedURL)
                     finalAudioURL = renamedURL
                 }
                 
-                // Passiamo il task e il file audio correttamente
-                addTask(Task(name: finalTaskName, time: timeString, category: "Quick"), day, finalAudioURL)
+                // Passa il task e il file audio alla funzione principale
+                addTask(Task(name: taskName.isEmpty ? "Quick Task" : taskName,
+                             time: timeString,
+                             category: "Quick"), day, recordedAudioURL)
             })
         }
     }
@@ -115,11 +118,25 @@ struct AddTaskView: View {
         }
     }
     
+    // Rinominare il file e passare il riferimento corretto
     private func stopRecording() {
         audioRecorder?.stop()
         isRecording = false
+
+        if let url = recordedAudioURL {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
+            let dateString = formatter.string(from: Date())
+            
+            let taskFileName = taskName.isEmpty ? "QuickTask" : taskName.replacingOccurrences(of: " ", with: "_")
+            let renamedURL = url.deletingLastPathComponent().appendingPathComponent("\(taskFileName)_\(dateString).m4a")
+            
+            try? FileManager.default.moveItem(at: url, to: renamedURL)
+            recordedAudioURL = renamedURL
+        }
     }
 }
+
 
 struct CategoryView: View {
     var title: String

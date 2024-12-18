@@ -1,18 +1,14 @@
-//sviluppi futuri: siri shortcuts per aggiungere velocemente delle task, e reminder delle tasks con una notifica, con la richiesta di permesso di attivare un Focus come non disturbare
+//sviluppi futuri: siri shortcuts per aggiungere velocemente delle task, e reminder delle tasks con una notifica, con la richiesta di permesso di attivare un Focus come non disturbare - aggiungi che si possono poi categorizzare successivamente dalla lista che si ha: cose che si devono fare successivamente ad integrazione SwiftData per salvataggio
 
 
-//aggiungi che si possono poi categorizzare successivamente dalla lista che si ha
-//accessibilità
 
 
 //TASKS: FUNZIONANO
-
 
 //QUICK VOICE TASK: NON ESCE RIPRODUZIONE AUDIO
 //PERSONAL VOICE TASK: SI SALVA CON LA DATA IN PERSONAL E NON ESCE RIPRODUZIONE AUDIO NELLA CONTENT
 //OTHER VOICE TASK: SI SALVA CON LA DATA IN OTHER E NON ESCE RIPRODUZIONE AUDIO NELLA CONTENT
 //WORK VOICE TASK: SI SALVA CON LA DATA IN WORK E NON ESCE RIPRODUZIONE AUDIO NELLA CONTENT
-
 //HOBBY VOICE TASK: SI SALVA UNO BENE IN HOBBY MA SI DUPLICA IDK WHY E CREA UN FILE UNTITLED E NON ESCE RIPRODUZIONE AUDIO NELLA CONTENT (ESCE DUPLICATO UNTITILED)
 
 
@@ -128,16 +124,32 @@ struct ContentView: View {
                 
                 List {
                     // Sezione: Quick Added Tasks
-                    if let quickTasks = tasksByDay[selectedDay]?.filter({ $0.category == nil || $0.category == "Quick" }), !quickTasks.isEmpty {
+                    if let quickTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Quick" || $0.category == nil }), !quickTasks.isEmpty {
                         Section(header: Text("Quick Added Tasks").font(.headline)) {
                             ForEach(quickTasks) { task in
-                                TaskRow(task: task, tasksByDay: $tasksByDay, selectedDay: selectedDay)
+                                HStack {
+                                    TaskRow(task: task, tasksByDay: $tasksByDay, selectedDay: selectedDay)
+                                    
+                                    // Cerca l'audio associato
+                                    if let audioFile = audioFilesByDay[selectedDay]?.first(where: { $0.url.lastPathComponent.contains(task.name) }) {
+                                        Spacer()
+                                        Button(action: {
+                                            playAudio(url: audioFile.url)
+                                        }) {
+                                            Image(systemName: "play.circle.fill")
+                                                .foregroundColor(.blue)
+                                                .font(.title2)
+                                        }
+                                    }
+                                }
                             }
                             .onDelete { indexSet in
                                 tasksByDay[selectedDay]?.remove(atOffsets: indexSet)
                             }
                         }
                     }
+
+
 
                     // Sezione: Hobby Tasks
                     if let hobbyTasks = tasksByDay[selectedDay]?.filter({ $0.category == "Hobby" }), !hobbyTasks.isEmpty {
@@ -250,25 +262,19 @@ struct ContentView: View {
                 if tasksByDay[day] == nil {
                     tasksByDay[day] = []
                 }
-                if !task.name.isEmpty {
-                    tasksByDay[day]?.append(task)
-                }
+                tasksByDay[day]?.append(task)
                 
+                // Aggiungi il file audio associato
                 if let audioURL = audioURL {
                     if audioFilesByDay[day] == nil {
                         audioFilesByDay[day] = []
                     }
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss"
-                    let dateString = formatter.string(from: Date())
-                    let renamedURL = audioURL.deletingLastPathComponent().appendingPathComponent("\(dateString).m4a")
-                    try? FileManager.default.moveItem(at: audioURL, to: renamedURL)
-                    audioFilesByDay[day]?.append(AudioFile(url: renamedURL))
+                    audioFilesByDay[day]?.append(AudioFile(url: audioURL))
                 }
-                
                 showModal = false // Chiudi la modale dopo il salvataggio
             })
         }
+
     }
     
     private func daysInMonth() -> [Int] {
@@ -294,14 +300,11 @@ struct ContentView: View {
     
     private func playAudio(url: URL) {
         do {
-            // Configura la sessione audio
             let audioSession = AVAudioSession.sharedInstance()
             try audioSession.setCategory(.playback, mode: .default, options: [])
             try audioSession.setActive(true)
             
-            // Crea e riproduci l'audio
             audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.volume = 1.0 // Imposta il volume al massimo
             audioPlayer?.play()
         } catch {
             print("Errore nella riproduzione dell'audio: \(error.localizedDescription)")
